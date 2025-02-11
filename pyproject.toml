@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.11"
 dependencies = [
-    "python-telegram-bot[job-queue]>=20.0",
+    "python-telegram-bot[job-queue]>=21.10",
     "requests>=2.32.3",
+    "slack-sdk>=3.34.0",
     "telegram>=0.0.1",
+    "twilio>=9.4.4",
 ]

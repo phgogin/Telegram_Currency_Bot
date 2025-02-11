@@ -15,7 +15,9 @@ def format_currency_message(rates):
     currency_formats = {
         'USD': '1USD = {:.2f} ROUBLES',
         'EUR': '1EUR = {:.2f} ROUBLES',
-        'CNY': '1CNY = {:.2f} ROUBLES'
+        'CNY': '1CNY = {:.2f} ROUBLES',
+        'JPY': '1JPY = {:.2f} ROUBLES',
+        'BYN': '1BYN = {:.2f} ROUBLES'
     }
 
     for currency, format_string in currency_formats.items():
