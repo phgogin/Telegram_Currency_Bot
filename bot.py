@@ -38,7 +38,8 @@ class CurrencyBot:
                 "/jpyrate - Get JPY rate\n"
                 "/bynrate - Get BYN rate\n"
                 "/gbprate - Get GBP rate\n"
-                "/allrates - Get all rates"
+                "/allrates - Get all rates\n"
+                "/convert - Convert currencies (e.g., /convert 100 USD to RUB)"
             )
             await update.message.reply_text(welcome_message)
             logger.info(f"New user started the bot: {update.effective_user.id}")
@@ -105,6 +106,41 @@ class CurrencyBot:
     async def gbp_rate(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await self.get_single_rate(update, context, 'GBP')
 
+    async def convert(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Convert between currencies using format: /convert 100 USD to RUB"""
+        try:
+            args = context.args
+            if len(args) != 4 or args[2].lower() != 'to':
+                await update.message.reply_text("Usage: /convert 100 USD to RUB")
+                return
+
+            amount = float(args[0])
+            from_currency = args[1].upper()
+            to_currency = args[3].upper()
+
+            if to_currency != 'RUB' and from_currency != 'RUB':
+                await update.message.reply_text("One currency must be RUB")
+                return
+
+            rates = self.moex_api.get_exchange_rates()
+            
+            if from_currency == 'RUB':
+                if to_currency not in rates:
+                    await update.message.reply_text(f"Cannot convert to {to_currency}")
+                    return
+                result = amount / rates[to_currency]
+                await update.message.reply_text(f"{amount:.2f} RUB = {result:.2f} {to_currency}")
+            else:
+                if from_currency not in rates:
+                    await update.message.reply_text(f"Cannot convert from {from_currency}")
+                    return
+                result = amount * rates[from_currency]
+                await update.message.reply_text(f"{amount:.2f} {from_currency} = {result:.2f} RUB")
+
+        except (ValueError, KeyError) as e:
+            logger.error(f"Conversion error: {str(e)}")
+            await update.message.reply_text("Invalid currency or amount")
+
 def main() -> None:
     """Main function to run the bot"""
     try:
@@ -128,6 +164,7 @@ def main() -> None:
         application.add_handler(CommandHandler("bynrate", bot.byn_rate))
         application.add_handler(CommandHandler("gbprate", bot.gbp_rate))
         application.add_handler(CommandHandler("allrates", bot.get_all_rates))
+        application.add_handler(CommandHandler("convert", bot.convert))
 
         # Start the bot
         logger.info("Starting bot polling...")
