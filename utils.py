@@ -13,17 +13,17 @@ def format_currency_message(rates):
     ]
 
     currency_formats = {
-        'USD': '1USD = {:.2f} ROUBLES',
-        'EUR': '1EUR = {:.2f} ROUBLES',
-        'CNY': '1CNY = {:.2f} ROUBLES',
-        'JPY': '1JPY = {:.2f} ROUBLES',
-        'BYN': '1BYN = {:.2f} ROUBLES'
+        'USD': '1USD = {:.4f} ROUBLES',
+        'EUR': '1EUR = {:.4f} ROUBLES',
+        'CNY': '1CNY = {:.4f} ROUBLES',
+        'JPY': '1JPY = {:.4f} ROUBLES',
+        'BYN': '1BYN = {:.4f} ROUBLES'
     }
 
     for currency, format_string in currency_formats.items():
         rate = rates.get(currency)
         if rate:
-            message_lines.append(format_string.format(rate))
+            message_lines.append(format_string.format(float(rate)))
         else:
             message_lines.append(f"{currency} rate unavailable")
 

@@ -8,5 +8,6 @@ dependencies = [
     "requests>=2.32.3",
     "slack-sdk>=3.34.0",
     "telegram>=0.0.1",
+    "trafilatura>=2.0.0",
     "twilio>=9.4.4",
 ]

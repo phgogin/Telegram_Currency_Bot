@@ -15,46 +15,77 @@ class MOEXAPI:
 
             data = response.json()
             rates = {}
+            best_prices = {}  # Track best prices across different boards
 
             # Log the response structure for debugging
             logger.debug(f"API Response structure: {data.keys()}")
 
             # Extract rates from MOEX response
-            if 'marketdata' in data:
+            if 'marketdata' in data and 'securities' in data:
                 securities_data = data['marketdata']['data']
-                columns = data['marketdata']['columns']
+                securities_info = data['securities']['data']
+                marketdata_columns = data['marketdata']['columns']
+                securities_columns = data['securities']['columns']
 
-                logger.debug(f"Columns available: {columns}")
-                logger.debug(f"Securities data: {securities_data}")
+                logger.debug(f"Marketdata columns available: {marketdata_columns}")
+                logger.debug(f"Securities columns available: {securities_columns}")
 
-                # Find the index of MARKETPRICE column (indicative price)
+                # Find indices for all possible price fields
                 try:
-                    price_index = columns.index('MARKETPRICE')
-                    secid_index = columns.index('SECID')
+                    indices = {
+                        'MARKETPRICE': marketdata_columns.index('MARKETPRICE'),
+                        'WAPRICE': marketdata_columns.index('WAPRICE'),
+                        'LAST': marketdata_columns.index('LAST'),
+                        'OPEN': marketdata_columns.index('OPEN'),
+                        'SECID': marketdata_columns.index('SECID'),
+                        'BOARDID': marketdata_columns.index('BOARDID')
+                    }
                 except ValueError as e:
-                    logger.error(f"Required columns not found in MOEX response. Available columns: {columns}")
+                    logger.error(f"Column index error: {str(e)}")
                     return None
 
                 # Process each security
                 for row in securities_data:
-                    if len(row) > max(price_index, secid_index):
-                        secid = row[secid_index]
-                        price = row[price_index]
+                    if not row:
+                        continue
 
-                        logger.debug(f"Processing security: {secid} with price: {price}")
+                    secid = row[indices['SECID']]
+                    boardid = row[indices['BOARDID']]
+                    logger.debug(f"Processing security: {secid} on board: {boardid}")
+                    logger.debug(f"Raw row data: {row}")
 
-                        # Match security with our configured pairs
+                    # Try different price fields in order of preference
+                    price = None
+                    used_field = None
+                    for field in ['MARKETPRICE', 'WAPRICE', 'LAST', 'OPEN']:
+                        if idx := indices.get(field):
+                            if idx < len(row) and row[idx] is not None:
+                                price = row[idx]
+                                used_field = field
+                                logger.debug(f"Found price using {field} for {secid} on {boardid}: {price}")
+                                break
+
+                    # Update best price if this is better than previous
+                    if price is not None and price > 0:  # Added price > 0 check
                         for currency, pair in CURRENCY_PAIRS.items():
-                            if pair == secid and price is not None:
-                                try:
-                                    rates[currency] = float(price)
-                                    logger.info(f"Successfully parsed {currency} rate: {price}")
-                                except (ValueError, TypeError):
-                                    logger.warning(f"Invalid rate value for {currency}: {price}")
-                                    rates[currency] = None
+                            if pair == secid:
+                                if currency not in best_prices or price > best_prices[currency]:
+                                    best_prices[currency] = price
+                                    logger.debug(f"Updated best price for {currency}: {price} from {boardid} using {used_field}")
 
-            if not rates:
-                logger.warning("No valid rates found in the MOEX response")
+                # Set final rates using best prices
+                for currency, price in best_prices.items():
+                    try:
+                        rates[currency] = float(price)
+                        logger.info(f"Successfully parsed {currency} rate: {price}")
+                    except (ValueError, TypeError) as e:
+                        logger.error(f"Invalid rate value for {currency}: {price}, Error: {str(e)}")
+                        rates[currency] = None
+
+                if not rates:
+                    logger.warning("No valid rates found in the MOEX response")
+                else:
+                    logger.info(f"Fetched rates: {rates}")
 
             return rates
 
