@@ -1,6 +1,31 @@
 from datetime import datetime
+from typing import Dict, Optional
 
-def format_currency_message(rates):
+# Store previous rates for comparison
+previous_rates: Dict[str, float] = {}
+
+def get_rate_mood(currency: str, current_rate: float) -> str:
+    """Determine emoji mood based on rate changes"""
+    if currency not in previous_rates:
+        previous_rates[currency] = current_rate
+        return "😐"  # Neutral face for first reading
+
+    change = ((current_rate - previous_rates[currency]) / previous_rates[currency]) * 100
+    previous_rates[currency] = current_rate  # Update previous rate
+
+    # Define moods based on percentage changes
+    if change > 1.0:
+        return "📈🚀"  # Strong rise
+    elif change > 0.2:
+        return "📈😊"  # Moderate rise
+    elif change < -1.0:
+        return "📉😰"  # Strong fall
+    elif change < -0.2:
+        return "📉😟"  # Moderate fall
+    else:
+        return "➡️😐"  # Stable
+
+def format_currency_message(rates: Optional[Dict[str, float]]) -> str:
     """Format currency rates message according to specifications"""
     if not rates:
         return "Sorry, unable to fetch currency rates at the moment."
@@ -13,19 +38,20 @@ def format_currency_message(rates):
     ]
 
     currency_formats = {
-        'USD': '1USD = {:.4f} ROUBLES',
-        'EUR': '1EUR = {:.4f} ROUBLES',
-        'CNY': '1CNY = {:.4f} ROUBLES',
-        'JPY': '1JPY = {:.4f} ROUBLES',
-        'BYN': '1BYN = {:.4f} ROUBLES',
-        'GBP': '1GBP = {:.4f} ROUBLES'
+        'USD': '1USD = {:.4f} ROUBLES {}',
+        'EUR': '1EUR = {:.4f} ROUBLES {}',
+        'CNY': '1CNY = {:.4f} ROUBLES {}',
+        'JPY': '1JPY = {:.4f} ROUBLES {}',
+        'BYN': '1BYN = {:.4f} ROUBLES {}',
+        'GBP': '1GBP = {:.4f} ROUBLES {}'
     }
 
     for currency, format_string in currency_formats.items():
         rate = rates.get(currency)
         if rate:
-            message_lines.append(format_string.format(float(rate)))
+            mood = get_rate_mood(currency, float(rate))
+            message_lines.append(format_string.format(float(rate), mood))
         else:
-            message_lines.append(f"{currency} rate unavailable")
+            message_lines.append(f"{currency} rate unavailable ❌")
 
     return "\n".join(message_lines)
