@@ -22,6 +22,7 @@ from logger import logger
 class CurrencyBot:
     def __init__(self):
         self.moex_api = MOEXAPI()
+        self.alerts = {}  # Structure: {user_id: {currency: (threshold, above/below)}}
         logger.info("CurrencyBot initialized")
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -39,7 +40,8 @@ class CurrencyBot:
                 "/bynrate - Get BYN rate\n"
                 "/gbprate - Get GBP rate\n"
                 "/allrates - Get all rates\n"
-                "/convert - Convert currencies (e.g., /convert 100 USD to RUB)"
+                "/convert - Convert currencies (e.g., /convert 100 USD to RUB)\n"
+                "/setalert - Set rate alert (e.g., /setalert USD > 100)"
             )
             await update.message.reply_text(welcome_message)
             logger.info(f"New user started the bot: {update.effective_user.id}")
@@ -106,6 +108,67 @@ class CurrencyBot:
     async def gbp_rate(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await self.get_single_rate(update, context, 'GBP')
 
+    async def check_alerts(self) -> None:
+        """Check all alerts against current rates"""
+        try:
+            rates = self.moex_api.get_exchange_rates()
+            for user_id, alerts in self.alerts.items():
+                for currency, (threshold, is_above) in alerts.items():
+                    if currency in rates:
+                        current_rate = rates[currency]
+                        if (is_above and current_rate > threshold) or (not is_above and current_rate < threshold):
+                            await self.application.bot.send_message(
+                                chat_id=user_id,
+                                text=f"🚨 Alert! {currency} rate is {'above' if is_above else 'below'} {threshold:.2f}.\n"
+                                     f"Current rate: {current_rate:.2f} RUB"
+                            )
+                            # Remove triggered alert
+                            del self.alerts[user_id][currency]
+                            if not self.alerts[user_id]:
+                                del self.alerts[user_id]
+        except Exception as e:
+            logger.error(f"Error checking alerts: {str(e)}")
+
+    async def setalert(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Set alert for currency rate with format: /setalert USD > 100"""
+        try:
+            if not context.args or len(context.args) != 3:
+                await update.message.reply_text(
+                    "Usage: /setalert CURRENCY > VALUE or /setalert CURRENCY < VALUE\n"
+                    "Example: /setalert USD > 100"
+                )
+                return
+
+            currency = context.args[0].upper()
+            operator = context.args[1]
+            try:
+                threshold = float(context.args[2])
+            except ValueError:
+                await update.message.reply_text("Please provide a valid number for the threshold")
+                return
+
+            if operator not in ['>', '<']:
+                await update.message.reply_text("Please use '>' or '<' as operator")
+                return
+
+            if currency not in ['USD', 'EUR', 'CNY', 'JPY', 'BYN', 'GBP']:
+                await update.message.reply_text("Invalid currency. Supported currencies: USD, EUR, CNY, JPY, BYN, GBP")
+                return
+
+            user_id = update.effective_user.id
+            if user_id not in self.alerts:
+                self.alerts[user_id] = {}
+
+            self.alerts[user_id][currency] = (threshold, operator == '>')
+            await update.message.reply_text(
+                f"Alert set! You will be notified when {currency} rate goes "
+                f"{'above' if operator == '>' else 'below'} {threshold:.2f} RUB"
+            )
+
+        except Exception as e:
+            logger.error(f"Error setting alert: {str(e)}")
+            await update.message.reply_text("An error occurred while setting the alert")
+
     async def convert(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Convert between currencies using format: /convert 100 USD to RUB"""
         try:
@@ -165,6 +228,7 @@ def main() -> None:
         application.add_handler(CommandHandler("gbprate", bot.gbp_rate))
         application.add_handler(CommandHandler("allrates", bot.get_all_rates))
         application.add_handler(CommandHandler("convert", bot.convert))
+        application.add_handler(CommandHandler("setalert", bot.setalert))
 
         # Start the bot
         logger.info("Starting bot polling...")
