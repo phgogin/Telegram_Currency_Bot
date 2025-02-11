@@ -92,10 +92,6 @@ class MOEXAPI:
                     if last_price is not None:
                         price = float(last_price)
                         if price > 0:
-                            # Skip MOEX rate for CNY and use CBR rate instead
-                            if currency == 'CNY':
-                                continue
-
                             if currency == 'JPY':
                                 price = price / 100  # Adjust JPY rate
                             rates[currency] = round(price, 4)
