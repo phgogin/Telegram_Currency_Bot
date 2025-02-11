@@ -45,7 +45,7 @@ class MOEXAPI:
                     logger.error(f"Column index error: {str(e)}")
                     return None
 
-                # First pass: process all currencies except JPY
+                # Process all currencies except JPY
                 for row in securities_data:
                     if not row:
                         continue
@@ -71,54 +71,68 @@ class MOEXAPI:
                     if currency == 'JPY':
                         continue
 
+                    logger.debug(f"Processing {currency} rate from {secid}")
+
                     try:
-                        # Try MARKETPRICE first
-                        if indices['MARKETPRICE'] < len(row) and row[indices['MARKETPRICE']] is not None:
-                            price = float(row[indices['MARKETPRICE']])
-                            if price > 0:
-                                rates[currency] = round(price, 4)
-                                logger.info(f"Found rate for {currency}: {rates[currency]} using MARKETPRICE")
-                                continue
+                        price = None
+                        if currency == 'EUR':
+                            logger.debug(f"Processing EUR rate - Raw data: {row}")
+                            # For EUR, try all price fields in order
+                            if row[indices['LAST']] is not None:
+                                price = float(row[indices['LAST']])
+                                logger.debug(f"EUR LAST price: {price}")
+                            elif row[indices['WAPRICE']] is not None:
+                                price = float(row[indices['WAPRICE']])
+                                logger.debug(f"EUR WAPRICE: {price}")
+                            elif row[indices['MARKETPRICE']] is not None:
+                                price = float(row[indices['MARKETPRICE']])
+                                logger.debug(f"EUR MARKETPRICE: {price}")
+                        # For CNY and BYN, use MARKETPRICE or WAPRICE
+                        elif currency in ['CNY', 'BYN']:
+                            if row[indices['MARKETPRICE']] is not None:
+                                price = float(row[indices['MARKETPRICE']])
+                                logger.debug(f"{currency} MARKETPRICE: {price}")
+                            elif row[indices['WAPRICE']] is not None:
+                                price = float(row[indices['WAPRICE']])
+                                logger.debug(f"{currency} WAPRICE: {price}")
+                        # For USD, try all price fields
+                        else:
+                            if row[indices['MARKETPRICE']] is not None:
+                                price = float(row[indices['MARKETPRICE']])
+                            elif row[indices['WAPRICE']] is not None:
+                                price = float(row[indices['WAPRICE']])
+                            elif row[indices['LAST']] is not None:
+                                price = float(row[indices['LAST']])
 
-                        # Try WAPRICE if MARKETPRICE not available
-                        if indices['WAPRICE'] < len(row) and row[indices['WAPRICE']] is not None:
-                            price = float(row[indices['WAPRICE']])
-                            if price > 0:
-                                rates[currency] = round(price, 4)
-                                logger.info(f"Found rate for {currency}: {rates[currency]} using WAPRICE")
-                                continue
-
-                        # Try LAST if others not available
-                        if indices['LAST'] < len(row) and row[indices['LAST']] is not None:
-                            price = float(row[indices['LAST']])
-                            if price > 0:
-                                rates[currency] = round(price, 4)
-                                logger.info(f"Found rate for {currency}: {rates[currency]} using LAST")
+                        if price and price > 0:
+                            rates[currency] = round(price, 4)
+                            logger.info(f"Found rate for {currency}: {rates[currency]}")
 
                     except (ValueError, TypeError) as e:
                         logger.error(f"Error processing price for {currency}: {str(e)}")
 
-                # Second pass: handle JPY and any missing rates
-                for currency, pair in CURRENCY_PAIRS.items():
-                    if currency not in rates or currency == 'JPY':
-                        logger.debug(f"Looking for fallback value for {currency}")
-                        for row in securities_info:
-                            if row[sec_indices['SECID']] == pair and row[sec_indices['BOARDID']] == 'CETS':
-                                try:
-                                    price = None
-                                    if currency == 'JPY':
-                                        price = 63.71  # JPY uses fixed LICU board value
-                                    elif sec_indices['PREVWAPRICE'] < len(row) and row[sec_indices['PREVWAPRICE']] is not None:
-                                        price = float(row[sec_indices['PREVWAPRICE']])
-
-                                    if price and price > 0:
+                # Handle JPY and fallback for other missing rates
+                if not rates.get('JPY') or len(rates) < len(CURRENCY_PAIRS) - 1:  # -1 for JPY
+                    for currency, pair in CURRENCY_PAIRS.items():
+                        if currency not in rates or currency == 'JPY':
+                            # Find the security info for this currency
+                            for row in securities_info:
+                                if row[sec_indices['SECID']] == pair and row[sec_indices['BOARDID']] == 'CETS':
+                                    try:
                                         if currency == 'JPY':
+                                            price = float(63.71)  # JPY uses fixed LICU board value
                                             price = price / 100  # Adjust JPY rate
-                                        rates[currency] = round(price, 4)
-                                        logger.info(f"Found fallback rate for {currency}: {rates[currency]}")
-                                        break
-                                except (ValueError, TypeError) as e:
-                                    logger.error(f"Error processing fallback price for {currency}: {str(e)}")
+                                            rates[currency] = round(price, 4)
+                                            logger.info(f"Set JPY rate to: {rates[currency]}")
+                                            break
+                                        elif row[sec_indices['PREVWAPRICE']] is not None:
+                                            price = float(row[sec_indices['PREVWAPRICE']])
+                                            if price > 0:
+                                                rates[currency] = round(price, 4)
+                                                logger.info(f"Found fallback rate for {currency}: {rates[currency]}")
+                                                break
+                                    except (ValueError, TypeError) as e:
+                                        logger.error(f"Error processing fallback price for {currency}: {str(e)}")
 
                 if not rates:
                     logger.warning("No valid rates found in the MOEX response")
