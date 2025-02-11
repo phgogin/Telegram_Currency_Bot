@@ -37,6 +37,7 @@ class CurrencyBot:
                 "/cnyrate - Get CNY rate\n"
                 "/jpyrate - Get JPY rate\n"
                 "/bynrate - Get BYN rate\n"
+                "/gbprate - Get GBP rate\n"
                 "/allrates - Get all rates"
             )
             await update.message.reply_text(welcome_message)
@@ -101,6 +102,9 @@ class CurrencyBot:
     async def byn_rate(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await self.get_single_rate(update, context, 'BYN')
 
+    async def gbp_rate(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        await self.get_single_rate(update, context, 'GBP')
+
 def main() -> None:
     """Main function to run the bot"""
     try:
@@ -122,6 +126,7 @@ def main() -> None:
         application.add_handler(CommandHandler("cnyrate", bot.cny_rate))
         application.add_handler(CommandHandler("jpyrate", bot.jpy_rate))
         application.add_handler(CommandHandler("bynrate", bot.byn_rate))
+        application.add_handler(CommandHandler("gbprate", bot.gbp_rate))
         application.add_handler(CommandHandler("allrates", bot.get_all_rates))
 
         # Start the bot

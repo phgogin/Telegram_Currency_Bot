@@ -5,7 +5,7 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', 'YOUR_BOT_TOKEN')
 
 # MOEX API Configuration
 # Updated URL format to use tomorrow's rates (TOM) for all currency pairs
-MOEX_API_BASE_URL = "https://iss.moex.com/iss/engines/currency/markets/selt/securities.json?iss.meta=off&securities=CNYRUB_TOM,USD000UTSTOM,JPYRUB_TOM,EURRUB_TOM,BYNRUB_TOM&iss.only=marketdata,securities&lang=en"
+MOEX_API_BASE_URL = "https://iss.moex.com/iss/engines/currency/markets/selt/securities.json?iss.meta=off&securities=CNYRUB_TOM,USD000UTSTOM,JPYRUB_TOM,EURRUB_TOM,BYNRUB_TOM,GBPRUB_TOM&iss.only=marketdata,securities&lang=en"
 
 # Russian Central Bank API Configuration
 CBR_API_URL = "https://www.cbr-xml-daily.ru/daily_json.js"
@@ -20,5 +20,6 @@ CURRENCY_PAIRS = {
     'USD': 'USD000UTSTOM',    # Tomorrow USD rate
     'JPY': 'JPYRUB_TOM',      # Tomorrow JPY rate
     'EUR': 'EURRUB_TOM',      # Tomorrow EUR rate
-    'BYN': 'BYNRUB_TOM'       # Tomorrow BYN rate
+    'BYN': 'BYNRUB_TOM',      # Tomorrow BYN rate
+    'GBP': 'GBPRUB_TOM'       # Tomorrow GBP rate
 }
