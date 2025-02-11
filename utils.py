@@ -15,15 +15,15 @@ def get_rate_mood(currency: str, current_rate: float) -> str:
 
     # Define moods based on percentage changes
     if change > 1.0:
-        return "📈🚀"  # Strong rise
+        return "📉😰"  # Strong rise (inverse mood)
     elif change > 0.2:
-        return "📈😊"  # Moderate rise
+        return "😢"  # Moderate rise (inverse mood)
     elif change < -1.0:
-        return "📉😰"  # Strong fall
+        return "📈🚀"  # Strong fall (inverse mood)
     elif change < -0.2:
-        return "📉😟"  # Moderate fall
+        return "😊"  # Moderate fall (inverse mood)
     else:
-        return "➡️😐"  # Stable
+        return "😐"  # Stable
 
 def format_currency_message(rates: Optional[Dict[str, float]]) -> str:
     """Format currency rates message according to specifications"""
