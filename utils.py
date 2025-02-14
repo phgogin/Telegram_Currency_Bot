@@ -14,13 +14,13 @@ def get_rate_mood(currency: str, current_rate: float) -> str:
     previous_rates[currency] = current_rate  # Update previous rate
 
     # Define moods based on percentage changes
-    if change > 1.0:
-        return "📉😰"  # Strong rise (inverse mood)
-    elif change > 0.2:
+    if change > 2.5:
+        return "📈😰"  # Strong rise (inverse mood)
+    elif change > 0.5:
         return "😢"  # Moderate rise (inverse mood)
-    elif change < -1.0:
-        return "📈🚀"  # Strong fall (inverse mood)
-    elif change < -0.2:
+    elif change < -2.5:
+        return "📉🚀"  # Strong fall (inverse mood)
+    elif change < -0.5:
         return "😊"  # Moderate fall (inverse mood)
     else:
         return "😐"  # Stable

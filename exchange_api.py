@@ -6,7 +6,7 @@ from logger import logger
 class MOEXAPI:
     def __init__(self):
         self.base_url = MOEX_API_BASE_URL
-        self.valid_boards = ['CETS']
+        self.valid_boards = ['CETS', 'CNGD', 'LICU']
         self.cbr_rates = {}
         self._fetch_cbr_rates()
 
@@ -73,8 +73,8 @@ class MOEXAPI:
                 trading_status = row[indices['TRADINGSTATUS']]
                 last_price = row[indices['LAST']]
 
-                # Skip if not on CETS board or not actively trading
-                if boardid != 'CETS' or trading_status != 'T':
+                # Skip if not on valid boards or not actively trading
+                if boardid not in self.valid_boards or trading_status != 'T':
                     logger.debug(f"Skipping {secid}: board={boardid}, status={trading_status}")
                     continue
 
@@ -103,11 +103,7 @@ class MOEXAPI:
             for currency in CURRENCY_PAIRS.keys():
                 if currency not in rates and currency in self.cbr_rates:
                     rates[currency] = self.cbr_rates[currency]
-                    # Special log message for CNY and GBP to indicate intentional CBR usage
-                    if currency in ['CNY', 'GBP']:
-                        logger.info(f"Using CBR rate for {currency} as preferred source: {self.cbr_rates[currency]}")
-                    else:
-                        logger.info(f"Using CBR fallback rate for {currency}: {rates[currency]}")
+                    logger.info(f"Using CBR fallback rate for {currency}: {rates[currency]}")
 
             return rates if rates else self.cbr_rates
 

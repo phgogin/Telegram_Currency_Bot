@@ -186,7 +186,7 @@ class CurrencyBot:
                 return
 
             rates = self.moex_api.get_exchange_rates()
-            
+
             if from_currency == 'RUB':
                 if to_currency not in rates:
                     await update.message.reply_text(f"Cannot convert to {to_currency}")
@@ -215,6 +215,7 @@ def main() -> None:
 
         # Create bot instance
         bot = CurrencyBot()
+        bot.application = application # Added this line to pass application instance to CurrencyBot
 
         # Add command handlers
         logger.info("Setting up command handlers...")
@@ -232,7 +233,7 @@ def main() -> None:
 
         # Start the bot
         logger.info("Starting bot polling...")
-        application.run_polling(allowed_updates=Update.ALL_TYPES)
+        application.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True, poll_interval=1.0, timeout=30)
 
     except Exception as e:
         logger.error(f"Bot crashed: {str(e)}")
