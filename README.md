@@ -34,3 +34,87 @@ A sophisticated Telegram bot that provides real-time currency exchange rates wit
 - `/allrates` - Get all currency rates
 - `/convert` - Convert currencies (e.g., `/convert 100 USD to RUB`)
 - `/setalert` - Set rate alert (e.g., `/setalert USD > 100`)
+
+## Installation
+
+1. Clone this repository:
+```bash
+git clone https://github.com/yourusername/currency-telegram-bot.git
+cd currency-telegram-bot
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Set up environment variables:
+```bash
+export TELEGRAM_BOT_TOKEN=your_bot_token_here
+```
+
+4. Run the bot:
+```bash
+python bot.py
+```
+
+## Configuration
+
+The bot uses multiple configuration sources:
+
+- **MOEX API**: Moscow Exchange for real-time trading data
+- **CBR API**: Russian Central Bank for fallback rates
+- **Telegram Bot API**: For bot functionality
+
+## Project Structure
+
+```
+├── bot.py              # Main bot implementation
+├── config.py           # Configuration settings
+├── exchange_api.py     # API integration for currency data
+├── utils.py            # Utility functions for formatting
+├── logger.py           # Logging configuration
+├── requirements.txt    # Python dependencies
+└── README.md          # This file
+```
+
+## Technical Details
+
+### Data Sources
+
+1. **Primary Source - MOEX API**: 
+   - Real-time trading data from Moscow Exchange
+   - Supports tomorrow's rates (TOM) for all currency pairs
+   - Active trading status verification
+
+2. **Fallback Source - CBR API**:
+   - Russian Central Bank daily rates
+   - Used when MOEX data is unavailable
+   - Reliable backup for all supported currencies
+
+### Features
+
+- **Intelligent Rate Selection**: Automatically chooses the best available rate source
+- **Rate Mood Indicators**: Visual feedback on rate trends using emojis
+- **Async Implementation**: Efficient handling of multiple requests
+- **Comprehensive Logging**: Detailed logs for debugging and monitoring
+- **Error Recovery**: Graceful handling of API failures and network issues
+
+## Environment Variables
+
+- `TELEGRAM_BOT_TOKEN`: Your Telegram bot token (required)
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## Support
+
+For issues and questions, please create an issue on the GitHub repository.
