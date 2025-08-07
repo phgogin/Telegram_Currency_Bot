@@ -1,7 +1,7 @@
 import os
 
 # Telegram Bot Configuration
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', 'YOUR_BOT_TOKEN')
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '7720238192:AAGEPt_rkf12xJDraH5ajRFhDdvLFsO8Xus')
 
 # MOEX API Configuration
 # Updated URL format to use tomorrow's rates (TOM) for all currency pairs
